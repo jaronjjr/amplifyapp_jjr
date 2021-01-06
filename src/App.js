@@ -23,13 +23,12 @@
 // }
 
 // export default App;
-
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { withAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react'
 
-function App() {
+function Login() {
   return (
     <div className="App">
       <header>
@@ -41,4 +40,7 @@ function App() {
   );
 }
 
-export default withAuthenticator(App);
+export default withAuthenticator(Login);
+
+//////////////////////////////////////
+
