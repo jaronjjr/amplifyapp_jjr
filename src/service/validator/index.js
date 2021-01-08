@@ -1,7 +1,6 @@
 import { forEach } from "lodash";
 import isEmpty from "./isEmpty";
-import isMobileNumber from "./isMobileNumber";
-import { NOT_EMPTY, MOBILE_NUMBER } from "./errorMsgConst";
+import { NOT_EMPTY } from "./errorMsgConst";
 
 function runChecks(data, rule, value) {
   if (rule.required && isEmpty(value)) {

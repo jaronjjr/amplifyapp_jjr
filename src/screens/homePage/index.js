@@ -1,200 +1,332 @@
-import React, { Component } from 'react';
-// import logo from './logo.svg';
-import '../../App.css';
-// import { withAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react';
-// import { listNotes } from './graphql/queries';
-// import { createNote as createNoteMutation, deleteNote as deleteNoteMutation , updateNote as updateNoteMutation} from './graphql/mutations';
-// import { API, Storage } from 'aws-amplify';
-import { makeStyles ,withStyles} from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import DeleteIcon from '@material-ui/icons/Delete';
-import EditIcon from '@material-ui/icons/Edit';
+import React, { Component } from "react";
+import "../../App.css";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+import { Typography, TextField, Button, Paper, Grid,FormHelperText } from "@material-ui/core";
+import { withStyles } from "@material-ui/core/styles";
+import { push } from "connected-react-router";
+import { connect } from "react-redux";
+import {createTodo as createTodoMutation} from "../../graphql/mutations";
+import { API } from "aws-amplify";
+import { getTodo } from "../../graphql/queries";
+import { updateTodo } from "../../graphql/mutations";
+import { find } from "lodash";
+import validator from "../../service/validator";
+const styles = (theme) => ({
+  root: {
+    flexGrow: 1,
 
-const StyledTableCell = withStyles((theme) => ({
-    head: {
-      backgroundColor: theme.palette.common.black,
-      color: theme.palette.common.white,
+    "& > *": {
+      margin: theme.spacing(1),
+      width: "25ch",
     },
-    body: {
-      fontSize: 14,
-    },
-  }))(TableCell);
-  
-  const StyledTableRow = withStyles((theme) => ({
-    root: {
-      '&:nth-of-type(odd)': {
-        backgroundColor: theme.palette.action.hover,
-      },
-    },
-  }))(TableRow);
-  const useStyles = makeStyles((theme) => ({
-    root: {
-      flexGrow: 1,
-      
-      '& > *': {
-        margin: theme.spacing(1),
-        width: '25ch',
-      },
-    },
-    table: {
-      minWidth: 700,
-    },
-    demo: {
-      backgroundColor: theme.palette.background.paper,
-    },
-    title: {
-      margin: theme.spacing(4, 0, 2),
-    },
-    right:{
-      marginLeft:"20"
-  
-    },
-    textField: {
-      width: "12%",
-      textAlign: "left",
-      font: "normal normal normal 16px Karla",
-      letterSpacing: "0px",
-      color: "#2B3D51",
-      opacity: 1,
-      height: "25px",
-    },
-  
-  }));
-  const initialFormState = { name: '', description: '' }
-  
-  export class HomePage extends Component{
+  },
+  table: {
+    minWidth: 700,
+  },
+  demo: {
+    backgroundColor: theme.palette.background.paper,
+  },
 
-    constructor(props){
-        super(props);
-        this.state = {
-            data:{
-            company:"",
-            product_name:"",
-            description:""
-            }
-        }
+  right: {
+    marginLeft: "20",
+  },
+  textField: {
+    width: "12%",
+    textAlign: "left",
+    font: "normal normal normal 16px Karla",
+    letterSpacing: "0px",
+    color: "#2B3D51",
+    opacity: 1,
+    height: "25px",
+  },
+  paperStyle: {
+    marginLeft: "auto",
+    marginRight: "auto",
+    padding: "3%",
+    borderRadius: "10px",
+    backgroundColor: "#fdfdfd",
+    marginTop: theme.spacing(4),
+  },
+  arrowIcon: {
+    color: "#9e9e9e",
+  },
+  titleTypography: {
+    fontFamily: "Alegreya",
+    fontSize: "22px",
+    fontStyle: "bold",
+    marginBottom: theme.spacing(3),
+    marginLeft: theme.spacing(2),
+  },
+  headingTypography: {
+    opacity: "0.8",
+    fontFamily: "Alegreya",
+    fontSize: "18px",
+    marginBottom: theme.spacing(1),
+    [theme.breakpoints.down("sm")]: {
+      paddingLeft: theme.spacing(2),
+    },
+  },
+  buttonGrid: {
+    marginTop: theme.spacing(2),
+    [theme.breakpoints.down("sm")]: {
+      marginBottom: theme.spacing(3),
+    },
+  },
+  styledButton: {
+    border: "1px solid",
+    width: "8vw",
+    color: "#0B9DBC",
+    padding: "10px",
+
+    marginRight: theme.spacing(2),
+    [theme.breakpoints.down("sm")]: {
+      marginLeft: theme.spacing(1),
+      width: "30vw",
+    },
+  },
+  styledClearButton: {
+    backgroundColor: "#0B9DBC",
+    color: "white",
+    padding: "10px",
+    width: "8vw",
+
+    marginLeft: theme.spacing(4),
+    "&:hover": {
+      backgroundColor: "#0B9DBC",
+      color: "white",
+    },
+    [theme.breakpoints.down("sm")]: {
+      width: "30vw",
+    },
+  },
+  titleGrid: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(1),
+
+    [theme.breakpoints.down("sm")]: {
+      paddingLeft: theme.spacing(3),
+      padding: "3%",
+    },
+  },
+  styledTextField: {
+    [theme.breakpoints.down("sm")]: {
+      width: "80vw",
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
+    },
+  },
+  ErrorText:{
+    color:"red",
+    marginLeft:theme.spacing(1.2),
+  }
+});
+
+export class HomePage extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      data: {
+        company: "",
+        product_name: ""
+      },
+      errors: {
+        company: "",
+        product_name: ""
+      },
+      rules: {
+        company: {
+          required: true,
+        },
+        product_name: {
+          required: true,
+        },
+      }
+     
+    };
+  }
+
+  
+  componentDidMount() {
+    console.log("$$$$$");
+    this.getTodoById();
+    
+  }
+
+  getTodoById = async () => {
+    if (this.props.match.params.id) {
+      const apiData = await API.graphql({
+        query: getTodo,
+        variables: { id: this.props.match.params.id },
+      });
+console.log("data:",apiData);
+      this.setState({
+        ...this.state,
+        data: {
+          ...this.state.data,
+          company: apiData.data.getTodo.company,
+          product_name: apiData.data.getTodo.product_name
+        },
+      });
     }
+  };
 
-    handleChange = (event) => {
-        this.setState({
-          ...this.state,
-          data: {
-            ...this.state.data,
-            [event.target.name]: event.target.value,
-          },
-       
+  validate = (rules, data) => {
+    const errors = validator(rules)(data);
+    const hasErrors = find(errors, (error) => error !== "");
+    this.setState({
+      ...this.state,
+      errors,
+    });
+    return !hasErrors;
+  };
+
+  handleChange = (event) => {
+    this.setState({
+      ...this.state,
+      data: {
+        ...this.state.data,
+        [event.target.name]: event.target.value,
+      },
+    });
+  };
+  onClickArrowButton = () => {
+    this.props.navigateTo("/");
+  };
+
+  handleClear = () => {
+    const tempdata = {
+      company: "",
+      product_name: "",
+    };
+    this.setState({ data: tempdata }, () => {});
+  };
+
+  handleSubmit = async (input) => {
+    const  {rules,data} = this.state;
+    if (this.validate(rules, data)) {
+      if (this.props.match.params.id) {
+        const passData = this.state.data;
+        passData.id = this.props.match.params.id;
+
+        const data = await API.graphql({
+          query: updateTodo,
+          variables: { input: this.state.data }
+          
         });
-        console.log(this.state.data)
-      };
 
-render (){
+        alert("Product Edited succefully!");
+        this.props.navigateTo("/list");
+      } else {
+        const data = await API.graphql({
+          query: createTodoMutation,
+          variables: { input: this.state.data },
+        });
+        console.log("input:", this.state.data);
+        alert("Product added succefully!");
+        this.props.navigateTo("/list");
+      }
+    }
+  };
 
-    const{classes}=this.props;
-    const {data}=this.state
+
+
+  render() {
+    const { classes } = this.props;
+    const { data,errors } = this.state;
     return (
-      <div className="App">
-       
-        <form>
-                <div className={classes.root}>
-                <TextField
-                  fullWidth
-                  type="text"
-                  name="company"
-                  value={data.company}
-                //   errors={errors.employeeId ? true : false}
-                  onChange={this.handleChange}
-                  id="outlined-margin-dense"
-                  margin="dense"
-                  variant="outlined"
-                />
-                <TextField
-                  fullWidth
-                  type="text"
-                  name="product_name"
-                  value={data.product_name}
-                //   errors={errors.employeeId ? true : false}
-                  onChange={this.handleChange}
-                  id="outlined-margin-dense"
-                  margin="dense"
-                  variant="outlined"
-                />
-                <TextField
-                  fullWidth
-                  type="text"
-                  name="description"
-                  value={data.description}
-                //   errors={errors.employeeId ? true : false}
-                  onChange={this.handleChange}
-                  id="outlined-margin-dense"
-                  margin="dense"
-                  variant="outlined"
-                />
-                {/* <TextField
-                  label="Note"
-                  id="outlined-size-small"
-                  
-                  variant="outlined"
-                  size="small"
-                  value={formData.name}  
-                  onChange={e => setFormData({ ...formData, 'name': e.target.value})}
-                  />
-                  <TextField
-                  label="Description"
-                  id="outlined-size-small"
-                  
-                  variant="outlined"
-                  size="small"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, 'description': e.target.value})}
-                  /> */}
-                  
-                  <Button variant="contained" color="primary">Add Note</Button>
-  
-                </div>
-          </form>
-  
-        <div style={{marginBottom: 20}}>
-          <TableContainer component={Paper}>
-            <Table className={classes.table} aria-label="customized table">
-            <TableHead>
-            <TableRow>
-              <StyledTableCell>Note</StyledTableCell>
-              <StyledTableCell align="left">Description</StyledTableCell>
-              
-              <StyledTableCell align="left">Delete</StyledTableCell>
-             
-            </TableRow>
-          </TableHead>
-          <TableBody>
-          {/* {notes.map(note => (
-            <StyledTableRow key={note.id || note.name}>
-              <StyledTableCell component="th" scope="row">{note.name}</StyledTableCell>
-              <StyledTableCell align="left">{note.description}</StyledTableCell>
-              
-              <StyledTableCell align="left">
-              <DeleteIcon onClick={() => deleteNote(note)}>Delete note</DeleteIcon>
-              </StyledTableCell>
-            </StyledTableRow>
-         
-             
-            ))
-          } */}
-          </TableBody>
-          </Table>
-          </TableContainer>
-        </div>
-       
-        {/* <AmplifySignOut /> */}
+      <div>
+        <Paper elevation={6} className={classes.paperStyle}>
+          <Grid
+            container
+            spacing={3}
+            direction="row"
+            className={classes.titleGrid}
+          >
+            <ArrowBackIcon
+              className={classes.arrowIcon}
+              onClick={this.onClickArrowButton}
+            />
+            <Typography className={classes.titleTypography}>
+              {this.props.match.params.id ? "Edit Details" : "Add Details"}
+            </Typography>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography className={classes.headingTypography}>
+                Company Name
+              </Typography>
+              <TextField
+                fullWidth
+                type="text"
+                name="company"
+                value={data.company}
+                errors={errors.company ? true : false}
+                className={classes.styledTextField}
+                onChange={this.handleChange}
+                id="outlined-margin-dense"
+                margin="dense"
+                variant="outlined"
+              />
+                 {errors.company ? (
+                  <FormHelperText className={classes.ErrorText}>
+                    {errors.company}
+                  </FormHelperText>
+                ) : (
+                  ""
+                )}
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography className={classes.headingTypography}>
+                Product Name
+              </Typography>
+              <TextField
+                fullWidth
+                type="text"
+                name="product_name"
+                value={data.product_name}
+                errors={errors.product_name ? true : false}
+                className={classes.styledTextField}
+                onChange={this.handleChange}
+                id="outlined-margin-dense"
+                margin="dense"
+                variant="outlined"
+              />
+                 {errors.product_name ? (
+                  <FormHelperText className={classes.ErrorText}>
+                    {errors.product_name}
+                  </FormHelperText>
+                ) : (
+                  ""
+                )}
+            </Grid>
+          </Grid>
+          <Grid container spacing={5} className={classes.buttonGrid}>
+            <Grid item xs={12} md={6} direction="row">
+              <Button 
+              className={classes.styledButton}
+              onClick={this.handleSubmit}>
+                 {this.props.match.params.id ? "Edit" : "Add"}
+                {/* Add */}
+                </Button>
+              <Button
+                className={classes.styledClearButton}
+                onClick={this.handleClear}
+              >
+                clear
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
       </div>
     );
   }
 }
-export default HomePage
+
+function mapDispatchToProps(dispatch) {
+  return {
+    navigateTo: (url) => dispatch(push(url)),
+  };
+}
+
+const StyledHomePage = withStyles(styles)(HomePage);
+export default connect(null, mapDispatchToProps)(StyledHomePage);

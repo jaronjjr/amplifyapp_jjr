@@ -2,5 +2,4 @@ type Todo @model {
   id: ID!
   company: String!
   product_name: String!
-  description: String!
 }

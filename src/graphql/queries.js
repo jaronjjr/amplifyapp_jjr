@@ -7,7 +7,6 @@ export const getTodo = /* GraphQL */ `
       id
       company
       product_name
-      description
       createdAt
       updatedAt
     }
@@ -24,7 +23,6 @@ export const listTodos = /* GraphQL */ `
         id
         company
         product_name
-        description
         createdAt
         updatedAt
       }

@@ -7,7 +7,6 @@ export const onCreateTodo = /* GraphQL */ `
       id
       company
       product_name
-      description
       createdAt
       updatedAt
     }
@@ -19,7 +18,6 @@ export const onUpdateTodo = /* GraphQL */ `
       id
       company
       product_name
-      description
       createdAt
       updatedAt
     }
@@ -31,7 +29,6 @@ export const onDeleteTodo = /* GraphQL */ `
       id
       company
       product_name
-      description
       createdAt
       updatedAt
     }
